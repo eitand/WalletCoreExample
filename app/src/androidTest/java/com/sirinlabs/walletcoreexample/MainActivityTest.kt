@@ -1,6 +1,5 @@
 package com.sirinlabs.walletcoreexample
 
-import android.util.Log
 import com.trustwallet.core.app.utils.toHex
 import org.junit.Assert.*
 import org.junit.Before
@@ -161,5 +160,51 @@ class MainActivityTest {
             addressFromExtendedPrv9_84
         )
 
+    }
+
+    @Test
+    fun testEtherAddressDerivation() {
+        val expectedAddress = "0xA3Dcd899C0f3832DFDFed9479a9d828c6A4EB2A7"
+        val ether = CoinType.ETHEREUM
+
+        // get extended public keys for BIP44, BIP49 and BIP84
+        val publicKey44 = hdWallet.getExtendedPublicKey(Purpose.BIP44, ether, HDVersion.XPUB)
+        assertEquals(
+            "xpub6BsRBaXawwf5vGydzpBSDXrQJ5rZKrZQGPTWkXRTWXz1KZ11D8TixEwX3uBWHwZE1DzQJuyLT9hgZcp4bFKfYNCx5cYCYBQqP5jbxcVQumc",
+            publicKey44
+        )
+
+        val privateKey = hdWallet.getKeyForCoin(ether)
+        assertEquals(
+            "ab4accc9310d90a61fc354d8f353bca4a2b3c0590685d3eb82d0216af3badddc",
+            privateKey.data().toHex()
+        )
+
+        val address = ether.deriveAddress(privateKey)
+        assertEquals(
+            expectedAddress,
+            address
+        )
+
+        val xpubAddr0_44 =
+            HDWallet.getPublicKeyFromExtended(publicKey44, ether.curve(), HDVersion.XPUB, HDVersion.XPRV, 0, 0)
+        assertEquals(
+            "348a9ffac8022f1c7eb5253746e24d11d9b6b2737c0aecd48335feabb95a17991",
+            xpubAddr0_44.data().toHex()
+        )
+
+        //FIXME: fails - wrong address
+        val etherAddress0_44 = EthereumAddress(xpubAddr0_44)
+        assertEquals(
+            expectedAddress,
+            etherAddress0_44.description()
+        )
+
+        //FIXME: fails - crash
+        val addressFromExtended = HDWallet.getAddressFromExtended(publicKey44, ether.curve(), ether, 0, 0)
+        assertEquals(
+            expectedAddress,
+            addressFromExtended
+        )
     }
 }
